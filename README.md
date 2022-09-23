@@ -1,0 +1,2 @@
+# WespeaxExos
+Exercices per languages
