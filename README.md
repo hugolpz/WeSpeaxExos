@@ -1,2 +1,2 @@
-# WespeaxExos
-Exercices per languages
+# WeSpeaxExos
+Exercices per languages.
