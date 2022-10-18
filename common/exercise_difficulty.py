@@ -1,4 +1,5 @@
 # import relevant libraries
+import imp
 import re
 
 import numpy as np
@@ -75,7 +76,18 @@ class Difficulty:
         return 'B2' if q < 16 else 'C1'
 
     def set_word_difficulty(self, text):
-        return str(self.word_diff_df[self.word_diff_df["word"] == text]["Difficulty"].values[0])
+        return str(self.word_diff_df[self.word_diff_df["word"] == text.lower()]["Difficulty"].values[0])
+
+        
+    
+    # def find_vocab_score(self,text):
+    #     word_list = list(set(re.findall(r"[\w\='‘’]+", text.lower())))
+    #     avg_word_diff = [
+    #         self.word_diff_df[self.word_diff_df["word"] == word]["score"].values[0]
+    #         for word in word_list if word in self.word_diff_df["word"].unique()
+    #     ]
+    #     avg_word_diff = np.mean(avg_word_diff)
+    #     return avg_word_diff
 
     def sentence_length(self, text):
         """
@@ -183,8 +195,13 @@ class Difficulty:
         self.word_diff_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
         
         # set the difficulty for the word exercises
-        word_exo_df["Difficulty"] = word_exo_df["Full_sentence"].apply(lambda text: self.set_word_difficulty(str(text.lower())))
+        word_exo_df["Score_words_average"] = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
 
+        # get the difficulty level of the sentences
+        quantile_ranks = self.find_difficulty_quantiles(word_exo_df["Score_words_average"])
+        word_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
+
+        
         # get the average sentence length for each full sentence in the exercise dataset
         sent_exo_df["Length_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.sentence_length(str(text)))
         
@@ -208,7 +225,8 @@ class Difficulty:
 
         return word_exo_df, sent_exo_df
 
-data = pd.read_excel("../en/English_Exercises.xlsx")
+data = pd.read_excel("H:\Desktop\Documents\Portfolio\WeSpeaxExos\en\English_Exercises.xlsx")
+
 
 word_exo_objs = ["Learning vocabulary"]
 sent_exo_objs = ["Useful Sentences", "Grammar", "Verb_Conjugation"]
