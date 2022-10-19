@@ -1,5 +1,4 @@
 # import relevant libraries
-import imp
 import re
 
 import numpy as np
@@ -195,10 +194,10 @@ class Difficulty:
         self.word_diff_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
         
         # set the difficulty for the word exercises
-        word_exo_df["Score_words_average"] = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
+        average_word_score = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
 
         # get the difficulty level of the sentences
-        quantile_ranks = self.find_difficulty_quantiles(word_exo_df["Score_words_average"])
+        quantile_ranks = self.find_difficulty_quantiles(average_word_score)
         word_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
         
@@ -225,15 +224,15 @@ class Difficulty:
 
         return word_exo_df, sent_exo_df
 
-data = pd.read_excel("H:\Desktop\Documents\Portfolio\WeSpeaxExos\en\English_Exercises.xlsx")
 
+data = pd.read_excel("..\hi\Hindi_Exercises.xlsx")
 
 word_exo_objs = ["Learning vocabulary"]
-sent_exo_objs = ["Useful Sentences", "Grammar", "Verb_Conjugation"]
+sent_exo_objs = ["Useful Sentences", "Grammar"]
 
-difficulty_class = Difficulty(exo_df = data, language = "en", word_exo_objs = word_exo_objs, sent_exo_objs = sent_exo_objs)
+difficulty_class = Difficulty(exo_df = data, language = "hi", word_exo_objs = word_exo_objs, sent_exo_objs = sent_exo_objs)
 
 word_exo_df, sent_exo_df = difficulty_class.find_all_scores()
 
-word_exo_df.to_csv("word_exo_df.csv", index = False)
-sent_exo_df.to_csv("sent_exo_df.csv", index = False)
+word_exo_df.to_csv("word_exo_hi_df.csv", index = False)
+sent_exo_df.to_csv("sent_exo_hi_df.csv", index = False)
