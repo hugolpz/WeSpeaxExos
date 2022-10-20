@@ -26,8 +26,8 @@ class Difficulty:
         Tokenize the text and add new tokens to token list.
         Parameters
         ----------
-        text : str
-            A text string.
+        text : string
+            Sentence as text string.
         """
 
         tokens = tokenize(text, self.language)
@@ -40,8 +40,8 @@ class Difficulty:
         Calculate the average sentence length.
         Parameters
         ----------
-        text : str
-            A text string.
+        text : string
+            word from tiken list as string.
         Returns
         -------
         pandas series
@@ -58,24 +58,51 @@ class Difficulty:
         return pd.Series([length_word, zipf_word, score])
 
     def find_difficulty_quantiles(self, score_column):
+        """
+        Calculates the 32 quantile ranks for a score column
+        Parameters
+        ----------
+        score_column: array
+            The array of scores.
+        Returns
+        -------
+        the 32 quantile ranks for the score column
+        """
         return pd.qcut(score_column, 32, labels=False, duplicates = "drop")
 
-    def find_difficulty_level(self, q):
+    def find_difficulty_level(self, q_rank):
         """
         Calculate the difficulty level of the words based on their quantile rank.
+        Parameters
+        ----------
+        q_rank: array
+            The array of quantile ranks.
+        Returns
+        -------
+        the difficulty level according to the quantile ranks.
         """
         
-        if q < 2:
+        if q_rank < 2:
             return 'A1'
-        if q < 4:
+        if q_rank < 4:
             return 'A2'
-        if q < 8:
+        if q_rank < 8:
             return 'B1'
         
-        return 'B2' if q < 16 else 'C1'
-
-    def set_word_difficulty(self, text):
-        return str(self.word_diff_df[self.word_diff_df["word"] == text.lower()]["Difficulty"].values[0])
+        return 'B2' if q_rank < 16 else 'C1'
+    
+    def set_word_difficulty(self, word):
+        """
+        Find the difficulty level of the words in vocab exos.
+        Parameters
+        ----------
+        word: string
+            The word from vocab exos as string.
+        Returns
+        -------
+        the difficulty level of the word.
+        """
+        return str(self.word_diff_df[self.word_diff_df["word"] == word.lower()]["Difficulty"].values[0])
 
     def sentence_length(self, text):
         """
@@ -83,7 +110,7 @@ class Difficulty:
         Parameters
         ----------
         text : str
-            A text string.
+            Sentence as text string.
         Returns
         -------
         int
@@ -96,8 +123,8 @@ class Difficulty:
         Find the length of the longest word in the sentence
         Parameters
         ----------
-        text : str
-            A text string.
+        text : string
+            Sentence as text string.
         Returns
         -------
         int
@@ -108,15 +135,15 @@ class Difficulty:
 
     def find_wSRarest(self, text):
         """
-        Find the difficulty of the rarest word in the sentence
+        Find the frequency of the rarest word in the sentence
         Parameters
         ----------
-        text : str
-            A text string.
+        text : string
+            Sentence as text string.
         Returns
         -------
         float
-            The difficulty of the rarest word.
+            The frequency of the rarest word.
         """
 
         word_list = list(set(tokenize(text, self.language)))
@@ -125,15 +152,15 @@ class Difficulty:
 
     def find_wSavg(self, text):
         """
-        Find the average difficulty of the words in a sentence
+        Find the average difficulty score of the words in a sentence
         Parameters
         ----------
-        text : str
-            A text string.
+        text : string
+            Sentence as text string.
         Returns
         -------
         float
-            The average difficulty of the words.
+            The average difficulty score of the words.
         """
         word_list = list(set(tokenize(text, self.language)))
         avg_word_diff = [
@@ -147,8 +174,8 @@ class Difficulty:
         Calculate the sentence difficulty score.
         Parameters
         ----------
-        text : str
-            A text string.
+        text : string
+            Sentence as text string.
         Returns
         -------
         float
@@ -158,15 +185,23 @@ class Difficulty:
     
 
     def find_all_scores(self):
-        # split the exercise dataset by exercise types
+        """
+        Calculates the score for all exercises in the dataset.
+        Returns
+        -------
+        DataFrame
+            The exercise dataset with their respective difficulty scores.
+        """
+
+        # split exercise dataset by exercise types
         word_exo_df = self.exo_df[self.exo_df["Exo_objective"].isin(self.word_exo_objs)]
         sent_exo_df = self.exo_df[self.exo_df["Exo_objective"].isin(self.sent_exo_objs)]
 
-        # find all the tokens in the exercise dataset
+        # find all unique tokens in the exercise dataset
         word_exo_df["Full_sentence"].apply(lambda text: self.get_token_list(str(text)))
         sent_exo_df["Full_sentence"].apply(lambda text: self.get_token_list(str(text)))
 
-        # make the token list into a pandas dataframe
+        # convert token list into a pandas dataframe
         self.token_list = list(set(self.token_list))
         self.word_diff_df = pd.DataFrame({"word": self.token_list})
 
@@ -174,7 +209,7 @@ class Difficulty:
         self.word_diff_df[['length','zipf_freq','score']] = self.word_diff_df["word"].apply(lambda text: self.find_word_difficulty(str(text)))
         self.word_diff_df.sort_values(by = 'score', ascending = True, inplace = True, ignore_index = True)
 
-        # do a boxcox transformation on the word difficulty scores
+        # perform a boxcox transformation on the calculated word difficulty scores
         self.word_diff_df["boxcox_score"] = stat.boxcox(self.word_diff_df["score"])[0]
 
         # get the level of the transformed difficulty score
@@ -182,32 +217,27 @@ class Difficulty:
         self.word_diff_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
         if not word_exo_df.empty:
-            # set the difficulty for the word exercises
-            average_word_score = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
+            # get average difficulty score for each word/phrase in the word exercises
+            word_exo_df["Score_sentence"] = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
 
-            # get the difficulty level of the sentences
-            quantile_ranks = self.find_difficulty_quantiles(average_word_score)
+            # get the difficulty level of the word exercises
+            quantile_ranks = self.find_difficulty_quantiles(word_exo_df["Score_sentence"])
             word_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
-            # get the average sentence length for each full sentence in the exercise dataset
+        if not sent_exo_df.empty:
+            # get the average sentence length for each full sentence
             sent_exo_df["Length_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.sentence_length(str(text)))
 
-        if not sent_exo_df.empty:
-            # get length of right answers i.e. target words
-            sent_exo_df["Length_traget_word"] = sent_exo_df["Right_answer"].apply(lambda text: len(str(text)))
-
-            # get length of the longest word
-            sent_exo_df["Length_longest_word"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_wLengthMax(str(text)))
-
-            # get the difficulty score of the right answers (target words), rarest word in the sentence and the sentence
-            # sent_exo_df["Score_target_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.set_word_difficulty(str(text.lower())))
+            # get the average difficulty score of the words in each sentences
+            sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
+            
+            # get the frequency of the rarest word in each sentence
             sent_exo_df["Frequency_rarest_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSRarest(str(text)))
+            
+            # get the difficulty score of each sentence
             sent_exo_df["Score_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_SScore(str(text)))
 
-            # get the average difficulty score of the words in the sentences
-            # sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
-
-            # get the difficulty level of the sentences
+            # get the difficulty level of each sentence
             quantile_ranks = self.find_difficulty_quantiles(sent_exo_df["Score_sentence"])
             sent_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
