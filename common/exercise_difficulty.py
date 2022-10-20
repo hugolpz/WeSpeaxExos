@@ -77,17 +77,6 @@ class Difficulty:
     def set_word_difficulty(self, text):
         return str(self.word_diff_df[self.word_diff_df["word"] == text.lower()]["Difficulty"].values[0])
 
-        
-    
-    # def find_vocab_score(self,text):
-    #     word_list = list(set(re.findall(r"[\w\='‘’]+", text.lower())))
-    #     avg_word_diff = [
-    #         self.word_diff_df[self.word_diff_df["word"] == word]["score"].values[0]
-    #         for word in word_list if word in self.word_diff_df["word"].unique()
-    #     ]
-    #     avg_word_diff = np.mean(avg_word_diff)
-    #     return avg_word_diff
-
     def sentence_length(self, text):
         """
         Calculate the length of the text.
@@ -114,7 +103,7 @@ class Difficulty:
         int
             The length of the longest word.
         """
-        word_list = list(set(re.findall(r"[\w\='‘’]+", text.lower())))
+        word_list = list(set(tokenize(text, self.language)))
         return len(max(word_list, key = len))
 
     def find_wSRarest(self, text):
@@ -130,7 +119,7 @@ class Difficulty:
             The difficulty of the rarest word.
         """
 
-        word_list = list(set(re.findall(r"[\w\='‘’]+", text.lower())))
+        word_list = list(set(tokenize(text, self.language)))
         word_freq = [zipf_frequency(word, self.language) for word in word_list]
         return 8 - min(word_freq) if word_freq else 8 - 0
 
@@ -146,7 +135,7 @@ class Difficulty:
         float
             The average difficulty of the words.
         """
-        word_list = list(set(re.findall(r"[\w\='‘’]+", text.lower())))
+        word_list = list(set(tokenize(text, self.language)))
         avg_word_diff = [
             self.word_diff_df[self.word_diff_df["word"] == word]["score"].values[0]
             for word in word_list if word in self.word_diff_df["word"].unique()
@@ -168,12 +157,11 @@ class Difficulty:
         return self.sentence_length(text) * self.find_wSavg(text) * self.find_wSRarest(text)
     
 
-
     def find_all_scores(self):
         # split the exercise dataset by exercise types
         word_exo_df = self.exo_df[self.exo_df["Exo_objective"].isin(self.word_exo_objs)]
         sent_exo_df = self.exo_df[self.exo_df["Exo_objective"].isin(self.sent_exo_objs)]
-        
+
         # find all the tokens in the exercise dataset
         word_exo_df["Full_sentence"].apply(lambda text: self.get_token_list(str(text)))
         sent_exo_df["Full_sentence"].apply(lambda text: self.get_token_list(str(text)))
@@ -192,7 +180,7 @@ class Difficulty:
         # get the level of the transformed difficulty score
         quantile_ranks = self.find_difficulty_quantiles(self.word_diff_df["boxcox_score"])
         self.word_diff_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
-        
+
         # set the difficulty for the word exercises
         average_word_score = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
 
@@ -200,39 +188,26 @@ class Difficulty:
         quantile_ranks = self.find_difficulty_quantiles(average_word_score)
         word_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
-        
+
         # get the average sentence length for each full sentence in the exercise dataset
         sent_exo_df["Length_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.sentence_length(str(text)))
-        
+
         # get length of right answers i.e. target words
         sent_exo_df["Length_traget_word"] = sent_exo_df["Right_answer"].apply(lambda text: len(str(text)))
-        
+
         # get length of the longest word
         sent_exo_df["Length_longest_word"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_wLengthMax(str(text)))
-        
+
         # get the difficulty score of the right answers (target words), rarest word in the sentence and the sentence
         # sent_exo_df["Score_target_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.set_word_difficulty(str(text.lower())))
         sent_exo_df["Frequency_rarest_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSRarest(str(text)))
-        sent_exo_df["Score_sentence"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_SScore(str(text)))
+        sent_exo_df["Score_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_SScore(str(text)))
 
         # get the average difficulty score of the words in the sentences
-        sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
+        # sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
 
         # get the difficulty level of the sentences
         quantile_ranks = self.find_difficulty_quantiles(sent_exo_df["Score_sentence"])
         sent_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
-        return word_exo_df, sent_exo_df
-
-
-data = pd.read_excel("..\hi\Hindi_Exercises.xlsx")
-
-word_exo_objs = ["Learning vocabulary"]
-sent_exo_objs = ["Useful Sentences", "Grammar"]
-
-difficulty_class = Difficulty(exo_df = data, language = "hi", word_exo_objs = word_exo_objs, sent_exo_objs = sent_exo_objs)
-
-word_exo_df, sent_exo_df = difficulty_class.find_all_scores()
-
-word_exo_df.to_csv("word_exo_hi_df.csv", index = False)
-sent_exo_df.to_csv("sent_exo_hi_df.csv", index = False)
+        return word_exo_df.append(sent_exo_df,ignore_index = True)
