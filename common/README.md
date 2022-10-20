@@ -202,9 +202,7 @@ def find_SScore(self, text)
 
 * The final formula to calculate the sentence difficulty is :
 
-$$
-sentence \; length * average \; difficulty \; score \; of \; sentence * frequency \; of \; rarest \; word
-$$
+$$ sentence \ length * average \ difficulty \ score \ of \ sentence * frequency \ of \ rarest \ word$$
 
 ```python
 def find_all_scores(self)
