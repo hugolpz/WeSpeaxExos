@@ -181,33 +181,34 @@ class Difficulty:
         quantile_ranks = self.find_difficulty_quantiles(self.word_diff_df["boxcox_score"])
         self.word_diff_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
-        # set the difficulty for the word exercises
-        average_word_score = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
+        if not word_exo_df.empty:
+            # set the difficulty for the word exercises
+            average_word_score = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
 
-        # get the difficulty level of the sentences
-        quantile_ranks = self.find_difficulty_quantiles(average_word_score)
-        word_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
+            # get the difficulty level of the sentences
+            quantile_ranks = self.find_difficulty_quantiles(average_word_score)
+            word_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
+            # get the average sentence length for each full sentence in the exercise dataset
+            sent_exo_df["Length_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.sentence_length(str(text)))
 
-        # get the average sentence length for each full sentence in the exercise dataset
-        sent_exo_df["Length_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.sentence_length(str(text)))
+        if not sent_exo_df.empty:
+            # get length of right answers i.e. target words
+            sent_exo_df["Length_traget_word"] = sent_exo_df["Right_answer"].apply(lambda text: len(str(text)))
 
-        # get length of right answers i.e. target words
-        sent_exo_df["Length_traget_word"] = sent_exo_df["Right_answer"].apply(lambda text: len(str(text)))
+            # get length of the longest word
+            sent_exo_df["Length_longest_word"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_wLengthMax(str(text)))
 
-        # get length of the longest word
-        sent_exo_df["Length_longest_word"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_wLengthMax(str(text)))
+            # get the difficulty score of the right answers (target words), rarest word in the sentence and the sentence
+            # sent_exo_df["Score_target_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.set_word_difficulty(str(text.lower())))
+            sent_exo_df["Frequency_rarest_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSRarest(str(text)))
+            sent_exo_df["Score_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_SScore(str(text)))
 
-        # get the difficulty score of the right answers (target words), rarest word in the sentence and the sentence
-        # sent_exo_df["Score_target_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.set_word_difficulty(str(text.lower())))
-        sent_exo_df["Frequency_rarest_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSRarest(str(text)))
-        sent_exo_df["Score_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_SScore(str(text)))
+            # get the average difficulty score of the words in the sentences
+            # sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
 
-        # get the average difficulty score of the words in the sentences
-        # sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
-
-        # get the difficulty level of the sentences
-        quantile_ranks = self.find_difficulty_quantiles(sent_exo_df["Score_sentence"])
-        sent_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
+            # get the difficulty level of the sentences
+            quantile_ranks = self.find_difficulty_quantiles(sent_exo_df["Score_sentence"])
+            sent_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
 
         return word_exo_df.append(sent_exo_df,ignore_index = True)
