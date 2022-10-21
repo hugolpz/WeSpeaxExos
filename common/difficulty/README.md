@@ -1,10 +1,6 @@
-# WeSpeaxExos
+The **difficulty class** calculates the difficulty of the exercises based on word vocabulary and sentence flashcards/exercises.
 
-## General Information
-
-In this part of the project we have created a class that calculates the difficulty of the exercises (word vocabulary and sentence flashcards/exercises).
-
-## Libraries Used
+## Dependencies
 
 - numpy
 - pandas
@@ -13,7 +9,7 @@ In this part of the project we have created a class that calculates the difficul
 
 <!-- If you have screenshots you'd like to share, include them here. -->
 
-## Setup
+## Install
 
 ```python
 pip install -r requirements.txt # (not done yet i.e TBD)
@@ -21,9 +17,9 @@ pip install -r requirements.txt # (not done yet i.e TBD)
 
 ## Usage
 
-- Run the cells in `exercise_difficulty.ipynb` which will import the `Difficulty` class and call function to calculate exercise difficulty from class.
-
-- Each section will take the exercise data from a respective language as such Arabic, English and Hindi and extract the new exercise data with difficulty into an excel file.
+- Open `exercise_difficulty.ipynb`, run the cells: it import the difficulty class, calls relevant functions, calculate our exercises' difficulty.
+- Each section will take the exercise data from a respective language as such Arabic, English and Hindi
+- Export of the new exercise data with difficulty will be send into an excel file.
 
 ```python
 # import relevant libraries
@@ -61,7 +57,7 @@ complete_exo_hi_df.to_excel(
 )
 ```
 
-## List of Functions
+## List of functions
 
 ### Define the class
 
@@ -69,142 +65,67 @@ complete_exo_hi_df.to_excel(
 difficulty_class = Difficulty(exo_df, lang_code, word_exo_objs, sent_exo_objs)
 ```
 
-### Token List
+### Token list
 
-```python
-difficulty_class.get_token_list(text)
-```
+* `difficulty_class.get_token_list(text)`: adds new tokens to the tokens list by tokenizing text using wordfreq library using wordfreq.tokenize(text, lang_code)
 
-Adds new tokens to the tokens list by tokenizing text using wordfreq library using wordfreq.tokenize(text, lang_code)
+### Word difficulty
 
-### Word Difficulty
+* `difficulty_class.find_word_difficulty(word)`: returns the length (int), zipf_frequency (float) and difficulty score (float) for word in the token list. <br>The difficulty of a word is calculated based on an adapted version of the algorithm 2 from [Jagoda & Boiński (2019)](https://www.researchgate.net/publication/322996917_Assessing_Word_Difficulty_for_Quiz-Like_Game), with the formula :
 
-```python
-difficulty_class.find_word_difficulty(word)
-```
+    $$
+    word\;difficulty = \frac{word\;length}{length\;of\;longest\;word} * (8 - zipf\;frequency\;of\;word)
+    $$
+    
+    > We subtracted with 8 due to the upper bound of the zipf frequency is 8 and the concept of the formula is to have higher difficulty scores for the combination of longest words and rarest words (less frequent) and lower difficulty scores for short and common (more frequent) words , we used relative length and relative frequency as scaling factors.
 
-Returns the length (int), zipf_frequency (float) and difficulty score (float) for word in the token list.
+* `difficulty_class.find_difficulty_quantiles(score_column)`: returns the respective quantile rank (between 1 and 32) of each score in the difficulty score column.
 
-The difficulty of a word is calculated based on an adapted version of the algorithm 2 from [Jagoda & Boiński (2019)](https://www.researchgate.net/publication/322996917_Assessing_Word_Difficulty_for_Quiz-Like_Game). The final formula to calculate the word difficulty is : 
-
-$$
-word\;difficulty = \frac{word\;length}{length\;of\;longest\;word} * (8 - zipf\;frequency\;of\;word)
-$$
-
- 
-
-> We subtracted with 8 due to the upper bound of the zipf frequency is 8 and the concept of the formula is to have higher difficulty scores for the combination of longest words and rarest words (less frequent) and lower difficulty scores for short and common (more frequent) words , we used relative length and relative frequency as scaling factors.
-
-```python
-difficulty_class.find_difficulty_quantiles(score_column)
-```
-
-Returns the respective quantile rank (between 1 and 32) of each score in the difficulty score column.
-
-```python
-difficulty_class.find_difficulty_level(q_rank)
-```
-
-Returns the difficulty level of a word based on their quantile rank.
-
-If the quantile value is:
-
-- <= 2nd quantiles: A1 level.
-
-- <= 4th quantiles: A2 level.
-
-- <= 8th quantiles: B1 level.
-
-- <= 16th quantiles: B2 level.
-
-- <= 32nd quantiles: C1 level.
+* `difficulty_class.find_difficulty_level(q_rank)`: Returns the difficulty level of a word based on their quantile rank.
+  * range: `A1`,`A2`,`B1`,`B2`,`C1`
+    If the quantile value is:
+    - <= 2nd quantiles: A1 level.
+    - <= 4th quantiles: A2 level.
+    - <= 8th quantiles: B1 level.
+    - <= 16th quantiles: B2 level.
+    - <= 32nd quantiles: C1 level.
 
 ### Word Exercise Difficulty
 
-```python
-set_word_difficulty(word)
-```
-
-Returns the word’s respective difficulty level.
+* `set_word_difficulty(word)`: returns the word’s respective difficulty level.
 
 ### Sentence Exercise Difficulty
 
-```python
-difficulty_class.sentence_length(text)
-```
+* `difficulty_class.sentence_length(text)`: returns the sentence length.
+* `difficulty_class.find_wLengthMax(text)`: returns length of the longest word in the sentence.
+* `difficulty_class.find_wSRarest(text)`: returns frequency of the rarest word in the sentence.
+* `difficulty_class.find_wSavg(text)`: returns average difficulty score of the words in a sentence.
+* `difficulty_class.find_SScore(text)`: returns the sentence difficulty score. Its formula is:
 
-Returns the sentence length.
+    $$
+    sentence \ length * average \ difficulty \ score \ of \ sentence * frequency \ of \ rarest \ word
+    $$
 
-```python
-difficulty_class.find_wLengthMax(text)
-```
+* `difficulty_class.find_all_scores()`: returns a modified version of the exercise dataset with their respective difficulty scores.
 
-Returns length of the longest word in the sentence.
-
-```python
-difficulty_class.find_wSRarest(text)
-```
-
-Returns frequency of the rarest word in the sentence.
-
-```python
-difficulty_class.find_wSavg(text):
-```
-
-Returns average difficulty score of the words in a sentence.
-
-```python
-difficulty_class.find_SScore(text)
-```
-
-Returns the sentence difficulty score.
-
-The final formula to calculate the sentence difficulty is :
-
-$$
-sentence \ length * average \ difficulty \ score \ of \ sentence * frequency \ of \ rarest \ word
-$$
-
-```python
-difficulty_class.find_all_scores()
-```
-
-Returns a modified version of the exercise dataset with their respective difficulty scores
-
-How the function works:
-
+### Theoretical background
+`.find_all_scores()` works as follow :
 1. splits the exercise dataset by exercise types into word and sentence exercises
-
 2. find all unique tokens in the exercise dataset
-
 3. convert token list into a pandas dataframe
-
 4. get the difficulty of the words in the token list and sort by their difficulty
-
 5. perform a boxcox transformation on the calculated word difficulty scores
-
 6. get the level of the transformed difficulty score using 32 quantile ranks
-
-7. if the word exercise dataframe is not empty for each word/phrase in the exercises get the following:
-   
+7. if the word exercise dataframe is not empty for each word/phrase in the exercises get the following:   
    1. average difficulty score
-   
    2. difficulty level using 32 quantile ranks
-
 8. if the sentence exercise dataframe is not empty for each sentence in the exercises get the following:
-   
    1. average sentence length
-   
    2. average difficulty score of the words
-   
    3. frequency of the rarest word
-   
    4. difficulty score
-   
    5. difficulty level
-
 9. concatenate word and sentence exercise dataframes and retruns it
 
 ## Project Status
-
 Project is: _**in progress**_, the class code has only been tested for Arabic, English and Hindi.
