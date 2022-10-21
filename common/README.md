@@ -85,7 +85,7 @@ def find_word_difficulty(self, word)
 
 * Parameters: word from the token as string
 - Returns: a pandas series of the length (integer), the zipf frequency (float) and the difficulty score (float) of the word.
-* The difficulty of a word is calculated based on an adapted version of the algorithm 2 from Jagoda & Boiński (2019) [(PDF) Assessing Word Difficulty for Quiz-Like Game](https://www.researchgate.net/publication/322996917_Assessing_Word_Difficulty_for_Quiz-Like_Game)
+* The difficulty of a word is calculated based on an adapted version of the algorithm 2 from [Jagoda & Boiński (2019)](https://www.researchgate.net/publication/322996917_Assessing_Word_Difficulty_for_Quiz-Like_Game)
 
 * The final formula to calculate the word difficulty is : 
 
