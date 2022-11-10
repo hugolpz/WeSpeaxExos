@@ -74,7 +74,7 @@ difficulty_class = Difficulty(exo_df, lang_code, word_exo_objs, sent_exo_objs)
 * `difficulty_class.find_word_difficulty(word)`: returns the length (int), zipf_frequency (float) and difficulty score (float) for word in the token list. <br>The difficulty of a word is calculated based on an adapted version of the algorithm 2 from [Jagoda & Boiński (2019)](https://www.researchgate.net/publication/322996917_Assessing_Word_Difficulty_for_Quiz-Like_Game), with the formula :
 
     $$
-    word\;difficulty = \frac{word\;length}{length\;of\;longest\;word} * (8 - zipf\;frequency\;of\;word)
+    word \; difficulty = \frac{word \; length}{length \; of \; longest \; word} * (8 - zipf \; frequency \; of \; word)
     $$
     
     > We subtracted with 8 due to the upper bound of the zipf frequency is 8 and the concept of the formula is to have higher difficulty scores for the combination of longest words and rarest words (less frequent) and lower difficulty scores for short and common (more frequent) words , we used relative length and relative frequency as scaling factors.
