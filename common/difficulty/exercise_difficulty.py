@@ -181,9 +181,24 @@ class Difficulty:
         float
             The sentence difficulty score.
         """
-        return self.sentence_length(text) * self.find_wSavg(text) * self.find_wSRarest(text)
+        return (self.sentence_length(text) / self.max_sent_length) * self.find_wSavg(text) * self.find_wSRarest(text)
     
-
+    def get_right_answer(self, propositions, index):
+        """
+        Find the right answer of the sentence.
+        Parameters
+        ----------
+        propositions
+            The propositions of the sentence.
+        index
+            The index of the right answer.
+        Returns
+        -------
+        string
+            The right answer of the sentence.
+        """
+        return propositions.split('-')[int(index)]
+    
     def find_all_scores(self):
         """
         Calculates the score for all exercises in the dataset.
@@ -220,6 +235,8 @@ class Difficulty:
             # get average difficulty score for each word/phrase in the word exercises
             word_exo_df["Score_sentence"] = word_exo_df["Full_sentence"].apply(lambda text: self.find_wSavg(str(text)))
 
+            self.max_sent_length = max(list(word_exo_df["Score_sentence"]))
+
             # get the difficulty level of the word exercises
             quantile_ranks = self.find_difficulty_quantiles(word_exo_df["Score_sentence"])
             word_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
@@ -228,17 +245,24 @@ class Difficulty:
             # get the average sentence length for each full sentence
             sent_exo_df["Length_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.sentence_length(str(text)))
 
+            # get the right answer for each sentence
+            right_answers = sent_exo_df.apply(lambda x: self.get_right_answer(x["Propositions"], x["Right_answer_id"]), axis=1)
+
             # get the average difficulty score of the words in each sentences
-            sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
+            # sent_exo_df["Score_sentence_average"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSavg(str(text)))
+            sent_exo_df["Score_sentence_average"] = right_answers.apply(lambda text: self.find_wSavg(str(text)))
             
             # get the frequency of the rarest word in each sentence
             sent_exo_df["Frequency_rarest_word"] = sent_exo_df["Right_answer"].apply(lambda text: self.find_wSRarest(str(text)))
             
             # get the difficulty score of each sentence
-            sent_exo_df["Score_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_SScore(str(text)))
+            # sent_exo_df["Score_sentence"] = sent_exo_df["Full_sentence"].apply(lambda text: self.find_SScore(str(text)))
+            sent_exo_df["Frequency_rarest_word"] = right_answers.apply(lambda text: self.find_wSRarest(str(text)))
 
             # get the difficulty level of each sentence
             quantile_ranks = self.find_difficulty_quantiles(sent_exo_df["Score_sentence"])
             sent_exo_df["Difficulty"] = list(map(self.find_difficulty_level, quantile_ranks))
-
-        return word_exo_df.append(sent_exo_df,ignore_index = True)
+            
+        df_list = [word_exo_df, sent_exo_df]
+        
+        return pd.concat(df_list)
