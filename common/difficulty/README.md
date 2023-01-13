@@ -102,9 +102,7 @@ difficulty_class = Difficulty(exo_df, lang_code, word_exo_objs, sent_exo_objs)
 * `difficulty_class.find_wSavg(text)`: returns average difficulty score of the words in a sentence.
 * `difficulty_class.find_SScore(text)`: returns the sentence difficulty score. Its formula is:
 
-    $$
-    sentence \ length * average \ difficulty \ score \ of \ sentence * frequency \ of \ rarest \ word
-    $$
+    $$Sentence \ score \= sentence \ length \ * average \ difficulty \ score \ of \ words * frequency \ of \ rarest \ word$$
 
 * `difficulty_class.find_all_scores()`: returns a modified version of the exercise dataset with their respective difficulty scores.
 
